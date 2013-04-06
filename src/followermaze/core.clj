@@ -2,7 +2,6 @@
   (:import (java.net Socket ServerSocket))
   (:import (java.io InputStreamReader BufferedReader OutputStreamWriter BufferedWriter))
   (:require [clojure.string :as str])
-  (:use [clojure.set])
   (:gen-class))
 
 (def settings {:client-port 9099 :server-port 9090})
