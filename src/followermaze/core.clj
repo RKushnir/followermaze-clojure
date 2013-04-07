@@ -43,22 +43,25 @@
   (sequential-sort (unordered-events event-stream) #(:id %) 1))
 
 (defmulti event-recipients #(:type %))
+
 (defmethod event-recipients "F" [{followed :to}]
   (vals-in @clients [followed]))
+
 (defmethod event-recipients "U" [_]
   ())
+
 (defmethod event-recipients "B" [_]
   (vals @clients))
+
 (defmethod event-recipients "P" [{recipient :to}]
   (vals-in @clients [recipient]))
+
 (defmethod event-recipients "S" [{broadcaster :from}]
   (vals-in @clients (@followings broadcaster)))
 
 (defn notify-client [conn {payload :payload}]
-  (let [writer (get-writer conn)]
-    (.write writer payload)
-    (.newLine writer)
-    (.flush writer)))
+  (doto (get-writer conn)
+    (.write payload) (.newLine) (.flush)))
 
 (defn edit-followers [followings follower-id client-id f]
   (assoc followings client-id (f (followings client-id #{}) follower-id)))
@@ -70,10 +73,13 @@
   (edit-followers followings follower-id client-id disj))
 
 (defmulti update-state #(:type %))
+
 (defmethod update-state "F" [{follower-id :from client-id :to}]
   (swap! followings add-follower follower-id client-id))
+
 (defmethod update-state "U" [{follower-id :from client-id :to}]
   (swap! followings remove-follower follower-id client-id))
+
 (defmethod update-state :default [_])
 
 (defn process-event [event]
@@ -81,9 +87,9 @@
   (dorun (map #(notify-client % event) (event-recipients event))))
 
 (defn listen-event-source [port]
-  (with-open [socket (new ServerSocket port)
+  (with-open [socket       (new ServerSocket port)
               event-socket (.accept socket)
-              reader (get-reader event-socket)]
+              reader       (get-reader event-socket)]
     (dorun (map process-event (ordered-events reader)))))
 
 (defn listen-clients [port]
@@ -91,12 +97,11 @@
     (dorun
       (repeatedly (fn []
         (let [client-socket (.accept socket)
-              reader (get-reader client-socket)
-              id (.readLine reader)]
+              reader        (get-reader client-socket)
+              id            (.readLine reader)]
           (swap! clients assoc id client-socket)))))))
 
-(defn -main
-  [& args]
+(defn -main [& args]
   (def client-worker (future (listen-clients      (:client-port settings))))
   (def event-worker  (future (listen-event-source (:server-port settings))))
   (println "Started...")
