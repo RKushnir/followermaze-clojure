@@ -97,6 +97,7 @@
 
 (defn -main
   [& args]
+  (def client-worker (future (listen-clients      (:client-port settings))))
+  (def event-worker  (future (listen-event-source (:server-port settings))))
   (println "Started...")
-  (.start (new Thread #(listen-clients (:client-port settings))))
-  (listen-event-source (:server-port settings)))
+  @client-worker @event-worker)
