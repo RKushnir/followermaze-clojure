@@ -86,8 +86,8 @@
               reader (get-reader event-socket)]
     (dorun (map process-event (ordered-events reader)))))
 
-(defn listen-clients []
-  (with-open [socket (new ServerSocket (:client-port settings))]
+(defn listen-clients [port]
+  (with-open [socket (new ServerSocket port)]
     (dorun
       (repeatedly (fn []
         (let [client-socket (.accept socket)
@@ -98,5 +98,5 @@
 (defn -main
   [& args]
   (println "Started...")
-  (.start (new Thread listen-clients))
+  (.start (new Thread #(listen-clients (:client-port settings))))
   (listen-event-source (:server-port settings)))
